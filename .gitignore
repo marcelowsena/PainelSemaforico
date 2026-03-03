@@ -1,0 +1,21 @@
+# Virtual environment
+envsemaforico/
+
+# Arquivos de saída
+semaforico.csv
+VersãoAgrupada.csv
+
+# Cache Python
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Arquivos temporários
+_nul
+*.log
+
+# Arquivo de backup
+PainelSemaforico.7z
+
+# IDE
+.vscode/
