@@ -5,6 +5,17 @@ envsemaforico/
 semaforico.csv
 VersãoAgrupada.csv
 
+# Dados internos da empresa (gerados pelo script)
+baseOrc.json
+dadosEvoObra.json
+dadosPrevision.json
+prevision/dadosPrevision.json
+bases/enterprises.json
+bases/baseContratosItens.json
+bases/baseInContratosPreco.json
+*.csv
+*.xlsx
+
 # Cache Python
 __pycache__/
 **/__pycache__/

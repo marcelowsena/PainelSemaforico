@@ -472,7 +472,7 @@ def dicEvolAtividadePorId_atividade(dadosAtividade):
     return(dicEvoSrv)
 
 # URL do endpoint GraphQL
-token = os.environ.get('PREVISION_TOKEN', '6r6LVwYARqrBuibv3ZB366LT')
+token = os.environ.get('PREVISION_TOKEN')
 url = "https://api.prevision.com.br/graphql"
 headers = {
     "Accept": "application/json",

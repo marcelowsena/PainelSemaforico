@@ -2,8 +2,8 @@ import requests, json, os
 from requests.auth import HTTPDigestAuth, HTTPBasicAuth
 
 
-user = os.environ.get('SIENGE_USER', 'trust-francisco')
-pw = os.environ.get('SIENGE_PASSWORD', 'vSMeJeliJNfpkrXv7lDvrR6v2aLaynnZ')
+user = os.environ.get('SIENGE_USER')
+pw = os.environ.get('SIENGE_PASSWORD')
 
 
 def formalink(linkdic):
