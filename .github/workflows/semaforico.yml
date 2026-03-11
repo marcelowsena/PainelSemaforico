@@ -55,28 +55,7 @@ jobs:
 
       # 5. Inicializar bases se não existirem no cache (primeira execução)
       - name: Inicializar bases
-        run: |
-          python -c "
-import os, json
-os.makedirs('bases', exist_ok=True)
-if not os.path.exists('dadosPrevision.json'):
-    json.dump({}, open('dadosPrevision.json', 'w'))
-    print('dadosPrevision.json inicializado vazio')
-if not os.path.exists('dadosEvoObra.json'):
-    json.dump({}, open('dadosEvoObra.json', 'w'))
-    print('dadosEvoObra.json inicializado vazio')
-if not os.path.exists('bases/baseContratosItens.json'):
-    print('Cache vazio - gerando bases do Sienge (primeira execucao)...')
-    from atualizacaoBasesSienge import atualizaContratos
-    atualizaContratos()
-    print('Bases geradas com sucesso.')
-if not os.path.exists('baseOrc.json'):
-    print('Gerando baseOrc.json...')
-    from formaBaseOrc import formaOuAtBase
-    dados = formaOuAtBase()
-    json.dump(dados, open('baseOrc.json', 'w', encoding='utf-8'))
-    print('baseOrc.json gerado.')
-"
+        run: python init_bases.py
 
       # 6. Gerar painel semafórico e enviar para SharePoint
       - name: Gerar painel e enviar para SharePoint
