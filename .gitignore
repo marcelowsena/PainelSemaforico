@@ -6,7 +6,6 @@ semaforico.csv
 VersãoAgrupada.csv
 
 # Dados internos da empresa (gerados pelo script)
-baseOrc.json
 dadosEvoObra.json
 dadosPrevision.json
 prevision/dadosPrevision.json
