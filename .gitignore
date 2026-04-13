@@ -30,3 +30,14 @@ PainelSemaforico.7z
 # IDE
 .vscode/
 .claude/
+
+# Bases de dados geradas
+*.json
+bases/
+!.gitkeep
+
+# Logs e caches
+logs/
+*.log
+__pycache__/
+cache/
