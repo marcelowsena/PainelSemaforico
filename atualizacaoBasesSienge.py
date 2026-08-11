@@ -24,6 +24,12 @@ def precisaAtualizar(contratoAPI, baseLocal):
     if baseLocal is None:
         return True  # Contrato novo
 
+    # Contratos com medicao em andamento sempre atualizam: medicoes novas nao
+    # mudam status nem valor total, entao o cache congelava o valor medido
+    # (ex.: CT/2661 NOLA preso em 45k com 387k ja medidos no Sienge)
+    if contratoAPI.get('status') in ('PARTIALLY_MEASURED', 'PENDING'):
+        return True
+
     # Compara status
     if contratoAPI.get('status') != baseLocal.get('status'):
         return True
