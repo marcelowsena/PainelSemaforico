@@ -403,8 +403,18 @@ def trazEvDaApropr(relCff, dicEvPorID):
         codEAPAJ.append(coriginal)
     codEAPNova = '.'.join(codEAPAJ)
 
-    if len(servicos) != 0:
+    # fonte principal: realizedPoints (medicao mensal do orcamento) — e a mesma
+    # coluna "Realizado" da tela do Prevision; os pontos sao incrementos mensais,
+    # o acumulado e a soma. O metodo por atividades do cronograma so cobre itens
+    # vinculados e lancados, e zera obras medidas direto no orcamento.
+    pontosRealizado = d.get('realizedPoints') or []
+    somaRealizado = sum(p['y'] for p in pontosRealizado)
 
+    if somaRealizado > 0:
+      vincEAPdic[codEAPNova] = round(min(somaRealizado, 1.0), 4)
+
+    elif len(servicos) != 0:
+      # reserva: itens ainda sem medicao usam o avanco das atividades vinculadas
       evoPonderada = 0
 
       for s in servicos:
@@ -414,7 +424,7 @@ def trazEvDaApropr(relCff, dicEvPorID):
               evoPonderada += (dicEvPorID[idServ]* pesoServ)
           except KeyError:
               evoPonderada += 0
-      
+
       vincEAPdic[codEAPNova] = round(evoPonderada, 4)
 
     else:
@@ -578,8 +588,12 @@ def novoloop():
         print('Buscando atividades do projeto com id', projeto_nome)
         evolProjPorID = dicEvolAtividadePorId_atividade(atividadesProjeto)
         dadosEAP = trazEvDaApropr(projetoCFF, evolProjPorID)
-        results[str(projeto_nome).split(' - ')[1]] = dadosEAP
-        evoProjetos[str(projeto_nome).split(' - ')[1]] = buscar_dados_dashboard(projeto_id)['realized']
+        codObra = str(projeto_nome).split(' - ')[1]
+        # orçamento com mais itens vence — evita que relatório auxiliar (ex. "A.C")
+        # sobrescreva o orçamento principal da obra
+        if codObra not in results or len(dadosEAP) > len(results[codObra]):
+            results[codObra] = dadosEAP
+        evoProjetos[codObra] = buscar_dados_dashboard(projeto_id)['realized']
         if logging:
           if "NAUT" in projeto_nome:
               print(projetoCFF, file=open('nautCFF.txt', mode='w', encoding='utf-8-sig'))

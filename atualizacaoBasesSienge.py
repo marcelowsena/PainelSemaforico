@@ -24,6 +24,12 @@ def precisaAtualizar(contratoAPI, baseLocal):
     if baseLocal is None:
         return True  # Contrato novo
 
+    # Contratos com medicao em andamento sempre atualizam: medicoes novas nao
+    # mudam status nem valor total, entao o cache congelava o valor medido
+    # (ex.: CT/2661 NOLA preso em 45k com 387k ja medidos no Sienge)
+    if contratoAPI.get('status') in ('PARTIALLY_MEASURED', 'PENDING'):
+        return True
+
     # Compara status
     if contratoAPI.get('status') != baseLocal.get('status'):
         return True
@@ -86,8 +92,10 @@ def atualizaContratos():
         chave = (c.get('documentId'), c.get('contractNumber'))
         contratoLocal = indiceBase.get(chave)
 
-        # Verifica se precisa atualizar
-        if not precisaAtualizar(c, contratoLocal):
+        # Verifica se precisa atualizar. Cache com itens vazio nao e reaproveitado:
+        # pode ser resultado de falha temporaria na consulta de itens — sem isso o
+        # contrato fica permanentemente fora do relatorio (so refaz se status/valor mudar)
+        if not precisaAtualizar(c, contratoLocal) and contratoLocal.get('itens'):
             # Mantém dados da base local (cache)
             c['caucao'] = contratoLocal.get('caucao', {})
             c['itens'] = contratoLocal.get('itens', {})

@@ -1,5 +1,4 @@
 from atualizacaoBasesSienge import atualizaContratos
-from formaRelatorioCSV import linhasFinais
 from prevision import agrPrev_V5 as prv
 import csv
 import json
@@ -22,6 +21,10 @@ else:
     atualizaContratos()
     dadosPrev = json.load(open('dadosPrevision.json', mode='r', encoding='utf-8-sig'))
     evoProjetos = json.load(open('dadosEvoObra.json', mode='r', encoding='utf-8-sig'))
+
+# import depois de atualizaContratos() — o módulo lê baseContratosItens.json na
+# importação; antes disso o relatório saía com a base do run anterior (lag de 1 dia)
+from formaRelatorioCSV import linhasFinais
 
 #bloco para arrumar os 06.06 no prevision
 codAjustados = {}
@@ -388,9 +391,52 @@ filtroApropriacoes = {
     '04.007.002.001': supra, #escoramento
 }
 
-for linha in linhasFinais:  
+#tabela de/para dos grupos 01-04, por obra, preenchida pelo planejamento
+#formato: {obra: {codSienge: ["07","09"] | "GERAL" | []}}
+# lista de fases -> media ponderada do realizado das fases; GERAL -> % geral da obra; [] -> 0
+try:
+    deParaFases = json.load(open('deParaFases.json', encoding='utf-8'))
+except FileNotFoundError:
+    deParaFases = {}
+
+def evolucaoPorEAP(dadosObra, k):
+    '''
+    regra definida com planejamento (jul/2026): usa o valor do nivel mais
+    especifico; se zerado/ausente, sobe ate a fase. NAO soma niveis —
+    com realizedPoints todos os niveis tem acumulado e a soma duplicaria.
+    '''
+    partes = k.split('.')
+    for nv in range(len(partes), 0, -1):
+        v = dadosObra.get('.'.join(partes[0:nv]), 0)
+        if v:
+            return v
+    return 0
+
+def calculaDePara(codObra, spec):
+    '''resolve uma entrada da deParaFases para a obra'''
+    if spec == 'GERAL':
+        try:
+            return round(evoProjetos[codObra], 4)
+        except KeyError:
+            return 0
+    if not spec:
+        return 0
+    dadosObra = dadosPrev[codObra]
+    pesos = {}
+    for f in spec:
+        try:
+            pesos[f] = orcObras[codObra][f]['peso']
+        except KeyError:
+            pesos[f] = 0
+    somaPesos = sum(pesos.values())
+    if somaPesos == 0:
+        return round(sum(dadosObra.get(f, 0) for f in spec)/len(spec), 4)
+    return round(sum(dadosObra.get(f, 0)*(pesos[f]/somaPesos) for f in spec), 4)
+
+for linha in linhasFinais:
     evolucao = 0
-    codObra = str(linha['buildingId']) 
+    codObra = str(linha['buildingId'])
+    deParaObra = deParaFases.get(codObra, {})
     if codObra in dadosPrev:
         kAprops = list(linha['pesoAprops'].keys())
         for k in kAprops:
@@ -403,25 +449,17 @@ for linha in linhasFinais:
             if k in apFiltros:
                 evoSubs = filtroAp[k](codObra, dadosPrev)
                 evolucao += (evoSubs * linha['pesoAprops'][k])
-                #print(evolucao)
-                #print(linha)
                 continue
-            qtdNiveis = k.count('.')
-            apropExp = k.split('.')
-            consultas = []
-            for nv in range(qtdNiveis):
-                consultas.append('.'.join(apropExp[0:nv+1]))
-            consultas.append(k)
-            consultas.reverse()
-            for c in consultas:
-                try:
-                    evolucao += (dadosPrev[codObra][c] * linha['pesoAprops'][k])
-                except KeyError:
-                    evolucao += 0
-    
+            if k in deParaObra:
+                evolucao += (calculaDePara(codObra, deParaObra[k]) * linha['pesoAprops'][k])
+                continue
+            evolucao += (evolucaoPorEAP(dadosPrev[codObra], k) * linha['pesoAprops'][k])
+
     valorTotalContrato = float(linha['totalContrato'].replace(',', '.'))
 
-    if evolucao == 0:
+    # fallback do % geral so para obras SEM tabela de/para propria:
+    # nas obras com tabela, fase sem medicao deve aparecer como 0 (regra planejamento, CT/2764)
+    if evolucao == 0 and codObra not in deParaFases:
         try:
             evolucao = round(evoProjetos[str(codObra)], 4)
         except:
